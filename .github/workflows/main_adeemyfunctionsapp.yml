@@ -29,6 +29,12 @@ jobs:
         uses: actions/setup-python@v5 
         with:
           python-version: ${{ env.PYTHON_VERSION }}
+          
+      # Nuevo paso para verificar las dependencias
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+        env:
+          pythonLocation: ${{ env.pythonLocation }}
 
       # Opcional: Añadir paso para ejecutar tests
 
