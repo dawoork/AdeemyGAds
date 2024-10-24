@@ -32,7 +32,7 @@ def GAdeemy(req: func.HttpRequest) -> func.HttpResponse:
             "metrics": [
                 {"name": "advertiserAdImpressions"},  # Impresiones
                 {"name": "advertiserAdClicks"},  # Clics
-                {"name": "advertiserAdCostPerClick"},  # Costo por Clic (CPC)
+                {"name": "advertiserAdCostPerClick"},  # Costo por Clic CPC
                 {"name": "advertiserAdCost"},  # Costo total
                 {"name": "returnOnAdSpend"}  # Retorno sobre Inversión Publicitaria (ROAS)
             ],
