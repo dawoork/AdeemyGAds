@@ -2,9 +2,7 @@ import azure.functions as func
 import logging
 import os
 import json
-from google.analytics.data_v1beta import BetaAnalyticsDataClient
-from google.oauth2 import service_account
-from azure.storage.blob import BlobServiceClient
+
 
 def get_ga4_client():
     credentials_info = json.loads(os.environ['GOOGLE_APPLICATION_CREDENTIALS_JSON'])
