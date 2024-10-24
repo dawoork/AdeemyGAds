@@ -38,8 +38,8 @@ jobs:
 
       # Opcional: Añadir paso para ejecutar tests (si los tienes)
       - name: Run tests
-        run: pytest
-        
+        run: pytest tests/
+
       - name: Zip artifact for deployment
         run: zip -r release.zip ./* -x '.venv/*' '.git/*' '.github/*'
 
