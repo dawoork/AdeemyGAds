@@ -2,7 +2,7 @@
 # More GitHub Actions for Azure: https://github.com/Azure/actions
 # More info on Python, GitHub Actions, and Azure Functions: https://aka.ms/python-webapps-actions
 
-name: Build and deploy Python project to Azure Function App - AdeemyFunctionsApp
+name: Build and deploy Python project to Azure Function App - AdeemyAnalytics
 
 on:
   push:
@@ -14,6 +14,10 @@ env:
   AZURE_FUNCTIONAPP_PACKAGE_PATH: '.' # set this to the path to your web app project, defaults to the repository root
   PYTHON_VERSION: '3.9' # set this to the python version to use (supports 3.6, 3.7, 3.8)
 
+permissions:
+  id-token: write  # Requerido para OIDC
+  contents: read  # Permisos adicionales de lectura
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -22,61 +26,55 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup Python version
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v5 
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
-      - name: Create and start virtual environment
+      - name: Setup and install dependencies
         run: |
           python -m venv venv
           source venv/bin/activate
+          pip install -r requirements.txt
 
-      - name: Install dependencies
-        run: pip install -r requirements.txt
-
-      # Optional: Add step to run tests here
+      # Opcional: Añadir paso para ejecutar tests
 
       - name: Zip artifact for deployment
-        run: zip release.zip ./* -r
+        run: zip -r release.zip ./* -x 'venv/*' '.git/*' '.github/*'
 
-      - name: Upload artifact for deployment job
+      - name: List ZIP contents
+        run: unzip -l release.zip
+
+      - name: Upload artifact for deployment
         uses: actions/upload-artifact@v4
         with:
           name: python-app
-          path: |
-            release.zip
-            !venv/
+          path: release.zip
 
   deploy:
     runs-on: ubuntu-latest
     needs: build
-    
-    permissions:
-      id-token: write #This is required for requesting the JWT
 
     steps:
       - name: Download artifact from build job
         uses: actions/download-artifact@v4
         with:
           name: python-app
+          path: ./artifact  # Especificamos un directorio para el artefactos
 
-      - name: Unzip artifact for deployment
-        run: unzip release.zip     
-        
-      - name: Login to Azure
+      - name: Login to Azure using OpenID Connect (OIDC)
         uses: azure/login@v2
         with:
           client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_50AF5B3A82A94604806AB2305D2E82CD }}
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_9D498C747F2E4CB7A0D4AFD2D376F9B2 }}
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_4A651FBA222542D9A4C1191AD053BBAF }}
 
-      - name: 'Deploy to Azure Functions'
+      - name: Deploy to Azure Functions
         uses: Azure/functions-action@v1
-        id: deploy-to-function
         with:
           app-name: 'AdeemyFunctionsApp'
-          slot-name: 'Production'
           package: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
           scm-do-build-during-deployment: true
           enable-oryx-build: true
           
+      - name: Clean up artifacts (optional)
+        run: rm -f release.zip        
