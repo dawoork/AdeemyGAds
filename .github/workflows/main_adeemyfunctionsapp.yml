@@ -33,7 +33,7 @@ jobs:
       # Opcional: Añadir paso para ejecutar tests
 
       - name: Zip artifact for deployment
-        run: zip -r release.zip ./* -x 'venv/*' '.git/*' '.github/*'
+        run: zip -r release.zip ./* -x '.venv/*' '.git/*' '.github/*'
 
       - name: List ZIP contents
         run: unzip -l release.zip
