@@ -52,7 +52,7 @@ def GAdeemy(req: func.HttpRequest) -> func.HttpResponse:
             })
         # Convertir datos a JSON
         data_json = json.dumps(data)
-        # Subir datos a Blob Storage
+        # Subir datos a Blob Storagee
         upload_to_blob_storage(data_json)
         return func.HttpResponse("Datos subidos a Blob Storage.", status_code=200)
     except Exception as e:
