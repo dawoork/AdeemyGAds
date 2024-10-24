@@ -18,7 +18,7 @@ def upload_to_blob_storage(data):
     blob_client = blob_service_client.get_blob_client(container=container_name, blob='ga4_data.json')
     blob_client.upload_blob(data, overwrite=True)
 
-app = func.FunctionApp(http_auth_level=func.AuthLevel.FUNCTION)
+app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
 
 @app.route(route="GAdeemy")
 def GAdeemy(req: func.HttpRequest) -> func.HttpResponse:
