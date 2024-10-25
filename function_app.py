@@ -35,7 +35,8 @@ def GAdeemy(req: func.HttpRequest) -> func.HttpResponse:
                 {"name": "advertiserAdCostPerClick"},  # Costo por Clic CPC
                 {"name": "advertiserAdCost"},  # Costo total
                 {"name": "returnOnAdSpend"},  # Retorno sobre Inversión Publicitaria (ROAS)
-                {"name": "keyEvents"}
+                {"name": "keyEvents"},
+                {"name": "bounceRate"}
 
             ],
 
@@ -51,7 +52,8 @@ def GAdeemy(req: func.HttpRequest) -> func.HttpResponse:
                 "advertiserAdCostPerClick": row.metric_values[2].value,
                 "advertiserAdCost": row.metric_values[3].value,
                 "returnOnAdSpend": row.metric_values[4].value,
-                "keyEvents": row.metric_values[5].value
+                "keyEvents": row.metric_values[5].value,
+                "bounceRate": row.metric_values[6].value
             })
         # Convertir datos a JSON
         data_json = json.dumps(data)
