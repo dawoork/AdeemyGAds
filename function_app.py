@@ -2,10 +2,9 @@ import azure.functions as func
 import logging
 import os
 import json
-import google.analytics.data_v1beta 
-import google.oauth2
-import google.oauth2.service_account
-import azure.storage.blob
+from google.analytics.data_v1beta import BetaAnalyticsDataClient
+from google.oauth2 import service_account
+from azure.storage.blob import BlobServiceClient
 
 
 def get_ga4_client():
@@ -38,8 +37,7 @@ def GAdeemy(req: func.HttpRequest) -> func.HttpResponse:
                 {"name": "advertiserAdCost"},  # Costo total
                 {"name": "returnOnAdSpend"},  # Retorno sobre Inversión Publicitaria (ROAS)
                 {"name": "keyEvents"},
-                {"name": "bounceRate"},
-                {"name": "userEngagementDuration"}
+                {"name": "bounceRate"}
 
             ],
 
@@ -56,8 +54,7 @@ def GAdeemy(req: func.HttpRequest) -> func.HttpResponse:
                 "advertiserAdCost": row.metric_values[3].value,
                 "returnOnAdSpend": row.metric_values[4].value,
                 "keyEvents": row.metric_values[5].value,
-                "bounceRate": row.metric_values[6].value,
-                "userEngagementDuration": row.metric_values[7].value
+                "bounceRate": row.metric_values[6].value
             })
         # Convertir datos a JSON
         data_json = json.dumps(data)
