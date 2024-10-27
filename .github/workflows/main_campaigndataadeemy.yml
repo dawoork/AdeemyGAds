@@ -46,7 +46,7 @@ jobs:
         run: ls -R
 
       - name: Zip artifact for deployment
-        run: zip release.zip ./Functions/* -r
+        run: zip -r release.zip functions/
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
