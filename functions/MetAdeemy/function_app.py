@@ -2,7 +2,9 @@ import azure.functions as func
 import logging
 import os
 
-@app.route(route="MetaAdeemy", auth_level=func.AuthLevel.ANONYMOUS)
+app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
+
+@app.route(route="MetaAdeemy")
 def MetaAdeemy(req: func.HttpRequest) -> func.HttpResponse:
     logging.info('Python HTTP trigger function processed a request.')
 
