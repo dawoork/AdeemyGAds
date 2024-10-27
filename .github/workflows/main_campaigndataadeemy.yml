@@ -42,6 +42,9 @@ jobs:
           PYTHONPATH: ${{ github.workspace }}  # Apuntar a la raíz del proyecto
         run: pytest tests/
 
+      - name: List files for debugging
+        run: ls -R
+
       - name: Zip artifact for deployment
         run: zip release.zip ./Functions/* -r
 
