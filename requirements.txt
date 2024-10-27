@@ -21,7 +21,6 @@ gunicorn==20.1.0
 idna==3.10
 iniconfig==2.0.0
 isodate==0.7.2
-logging==0.4.9.6
 oauthlib==3.2.2
 packaging==24.1
 platformdirs==3.5.1
