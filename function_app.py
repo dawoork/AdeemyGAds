@@ -3,26 +3,25 @@ import logging
 import os
 import json
 import google.analytics.data_v1beta
-import google.oauth2.service_account  # Asegúrate de que este módulo está importado
+import google.oauth2.service_account
 import azure.storage.blob
 
-
+# Función para autenticarse y crear el cliente de GA4
 def get_ga4_client():
     credentials_info = json.loads(os.environ['GOOGLE_APPLICATION_CREDENTIALS_JSON'])
-    # Usar la referencia completa para acceder a service_account
     credentials = google.oauth2.service_account.Credentials.from_service_account_info(credentials_info)
     client = google.analytics.data_v1beta.BetaAnalyticsDataClient(credentials=credentials)
     return client
 
 
+# Función para subir los datos al Blob Storage
 def upload_to_blob_storage(data):
     blob_service_client = azure.storage.blob.BlobServiceClient.from_connection_string(os.environ['BLOB_CONNECTION_STRING'])
     container_name = os.environ['BLOB_CONTAINER_NAME']
     blob_client = blob_service_client.get_blob_client(container=container_name, blob='ga4_data.json')
     blob_client.upload_blob(data, overwrite=True)
 
-
-# Define la FunctionApp si es necesario en tu entorno de Azure Functions
+# Define la FunctionApp
 app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
 
 @app.route(route="GAdeemy")
@@ -31,7 +30,9 @@ def GAdeemy(req: func.HttpRequest) -> func.HttpResponse:
 
     try:
         client = get_ga4_client()
-        response = client.run_report(request={
+
+        # Primera solicitud para obtener las métricas publicitarias sin eventos
+        metrics_response = client.run_report(request={
             "property": f"properties/{os.environ['GA4_PROPERTY_ID']}",
             "dimensions": [{"name": "campaignId"}],
             "metrics": [
@@ -39,16 +40,16 @@ def GAdeemy(req: func.HttpRequest) -> func.HttpResponse:
                 {"name": "advertiserAdClicks"},  # Clics
                 {"name": "advertiserAdCostPerClick"},  # Costo por Clic CPC
                 {"name": "advertiserAdCost"},  # Costo total
-                {"name": "returnOnAdSpend"},  # Retorno sobre Inversión Publicitaria (ROAS)
-                {"name": "keyEvents"},
-                {"name": "bounceRate"}
+                {"name": "returnOnAdSpend"},  # ROAS
+                {"name": "keyEvents"},  # Eventos clave
+                {"name": "bounceRate"}  # Tasa de rebote
             ],
             "date_ranges": [{"start_date": "2024-01-01", "end_date": "today"}]
         })
 
-        # Procesar la respuesta
+        # Procesar las métricas publicitarias
         data = []
-        for row in response.rows:
+        for row in metrics_response.rows:
             data.append({
                 "campaignId": row.dimension_values[0].value,
                 "advertiserAdImpressions": row.metric_values[0].value,
@@ -60,12 +61,36 @@ def GAdeemy(req: func.HttpRequest) -> func.HttpResponse:
                 "bounceRate": row.metric_values[6].value
             })
 
+        # Segunda solicitud para obtener el conteo de eventos específicos
+        events_response = client.run_report(request={
+            "property": f"properties/{os.environ['GA4_PROPERTY_ID']}",
+            "dimensions": [{"name": "eventName"}],
+            "metrics": [{"name": "eventCount"}],
+            "date_ranges": [{"start_date": "2024-01-01", "end_date": "today"}],
+            "dimension_filter": {
+                "filter": {
+                    "field_name": "eventName",
+                    "in_list_filter": {
+                        "values": ["invitee_select_day", "invitee_select_time", "invitee_meeting_scheduled"]
+                    }
+                }
+            }
+        })
+
+        # Añadir los eventos específicos a las métricas al mismo nivel
+        for row in events_response.rows:
+            event_name = row.dimension_values[0].value
+            event_count = row.metric_values[0].value
+            
+            for item in data:
+                item[event_name] = event_count  # Añadir cada evento al mismo nivel
+
         # Convertir datos a JSON
         data_json = json.dumps(data)
 
         # Subir datos a Blob Storage
         upload_to_blob_storage(data_json)
-        return func.HttpResponse("Datos subidos a Blob Storage.", status_code=200)
+        return func.HttpResponse("Datos de métricas y eventos subidos a Blob Storage.", status_code=200)
 
     except Exception as e:
         logging.error(f"Error al obtener datos de GA4: {e}")
