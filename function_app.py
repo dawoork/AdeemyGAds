@@ -5,6 +5,7 @@ import json
 import google.analytics.data_v1beta
 import google.oauth2.service_account
 import azure.storage.blob
+from datetime import datetime
 
 # Función para autenticarse y crear el cliente de GA4
 def get_ga4_client():
@@ -13,7 +14,6 @@ def get_ga4_client():
     client = google.analytics.data_v1beta.BetaAnalyticsDataClient(credentials=credentials)
     return client
 
-
 # Función para subir los datos al Blob Storage
 def upload_to_blob_storage(data):
     blob_service_client = azure.storage.blob.BlobServiceClient.from_connection_string(os.environ['BLOB_CONNECTION_STRING'])
@@ -21,12 +21,13 @@ def upload_to_blob_storage(data):
     blob_client = blob_service_client.get_blob_client(container=container_name, blob='ga4_data.json')
     blob_client.upload_blob(data, overwrite=True)
 
-# Define la FunctionApp
+# Inicialización de la FunctionApp con Timer Trigger
 app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
 
-@app.route(route="GAdeemy")
-def GAdeemy(req: func.HttpRequest) -> func.HttpResponse:
-    logging.info('Python HTTP trigger function processed a request.')
+@app.function_name(name="GAdeemyTimerTrigger")
+@app.schedule(schedule="0 0 */4 * * *", arg_name="timer", run_on_startup=True, use_monitor=True)
+def GAdeemy(timer: func.TimerRequest) -> None:
+    logging.info("Timer trigger function ran at %s", datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
 
     try:
         client = get_ga4_client()
@@ -37,12 +38,12 @@ def GAdeemy(req: func.HttpRequest) -> func.HttpResponse:
             "dimensions": [{"name": "campaignId"}],
             "metrics": [
                 {"name": "advertiserAdImpressions"},  # Impresiones
-                {"name": "advertiserAdClicks"},  # Clics
-                {"name": "advertiserAdCostPerClick"},  # Costo por Clic CPC
-                {"name": "advertiserAdCost"},  # Costo total
-                {"name": "returnOnAdSpend"},  # ROAS
-                {"name": "keyEvents"},  # Eventos clave
-                {"name": "bounceRate"}  # Tasa de rebote
+                {"name": "advertiserAdClicks"},       # Clics
+                {"name": "advertiserAdCostPerClick"}, # CPC
+                {"name": "advertiserAdCost"},         # Costo total
+                {"name": "returnOnAdSpend"},          # ROAS
+                {"name": "keyEvents"},                # Eventos clave
+                {"name": "bounceRate"}                # Tasa de rebote
             ],
             "date_ranges": [{"start_date": "2024-01-01", "end_date": "today"}]
         })
@@ -90,8 +91,7 @@ def GAdeemy(req: func.HttpRequest) -> func.HttpResponse:
 
         # Subir datos a Blob Storage
         upload_to_blob_storage(data_json)
-        return func.HttpResponse("Datos de métricas y eventos subidos a Blob Storage.", status_code=200)
+        logging.info("Datos de métricas y eventos subidos a Blob Storage exitosamente.")
 
     except Exception as e:
         logging.error(f"Error al obtener datos de GA4: {e}")
-        return func.HttpResponse(f"Error: {e}", status_code=500)
