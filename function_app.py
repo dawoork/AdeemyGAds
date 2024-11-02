@@ -86,10 +86,13 @@ def GAdeemy(timer: func.TimerRequest) -> None:
             for item in data:
                 item[event_name] = event_count  # Añadir cada evento al mismo nivel
 
-        # Convertir datos a JSON
-        data_json = json.dumps(data)
+        # Filtrar datos con 'campaignId' no asignado
+        filtered_data = [item for item in data if item.get('campaignId') and item['campaignId'] != "(not set)"]
 
-        # Subir datos a Blob Storage
+        # Convertir datos a JSON después de filtrar
+        data_json = json.dumps(filtered_data)
+
+        # Subir datos a Blob Storage después de filtrar
         upload_to_blob_storage(data_json)
         logging.info("Datos de métricas y eventos subidos a Blob Storage exitosamente.")
 
